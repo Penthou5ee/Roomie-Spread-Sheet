@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Roommate Utility Expense Tracker</title>
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      --section-bg: #f8f9fa;
+      --primary-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: var(--primary-font);
+      background: var(--bg-gradient);
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: #fff;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    }
+    header {
+      background: var(--accent-gradient);
+      color: #fff;
+      padding: 2rem;
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+    }
+    main { padding: 2rem; }
+    .section {
+      background: var(--section-bg);
+      border-left: 5px solid #4facfe;
+      border-radius: 10px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+    .section h2 {
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+      color: #333;
+    }
+    .flex { display: flex; gap: 1rem; align-items: center; }
+    .grid { display: grid; gap: 1rem; }
+    .grid-auto { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+    .input-group { display: flex; flex-direction: column; }
+    .input-group label {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #555;
+    }
+    .input-group input,
+    .input-group select,
+    .button {
+      padding: 0.75rem;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #4facfe;
+    }
+    .button {
+      background: var(--accent-gradient);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      border-radius: 25px;
+    }
+    .button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(79,172,254,0.4);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    th, td {
+      padding: 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    th {
+      background: var(--bg-gradient);
+      color: #fff;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    tr:hover { background: #f5f5f5; }
+    .total, .balance {
+      font-weight: bold;
+    }
+    .balance-positive { color: #27ae60; }
+    .balance-negative { color: #e74c3c; }
+    .summary {
+      display: grid;
+      gap: 1rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      margin-top: 2rem;
+    }
+    .card {
+      background: var(--bg-gradient);
+      color: #fff;
+      padding: 1.5rem;
+      border-radius: 15px;
+      text-align: center;
+      transition: transform 0.3s;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    .card h3 {
+      opacity: 0.9;
+      margin-bottom: 0.5rem;
+    }
+    .card p {
+      font-size: 2rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏠 Roommate Utility Tracker</h1>
+      <p>Track and split expenses fairly among roommates</p>
+    </header>
+    <main>
+      <section class="section" id="setup-section">
+        <h2>👥 Roommate Setup</h2>
+        <div class="grid grid-auto" id="roommateInputs"></div>
+      </section>
+      <section class="section" id="controls-section">
+        <h2>📅 Month & Year</h2>
+        <div class="flex">
+          <div class="input-group">
+            <label for="monthSelect">Month</label>
+            <select id="monthSelect"></select>
+          </div>
+          <div class="input-group">
+            <label for="yearSelect">Year</label>
+            <select id="yearSelect"></select>
+          </div>
+          <button class="button" id="viewHistoryBtn">View History</button>
+        </div>
+      </section>
+      <section class="section" id="expense-section">
+        <h2>💰 Utility Expenses</h2>
+        <button class="button" id="addExpenseBtn">+ Add New Expense</button>
+        <table aria-label="Expenses Table">
+          <thead>
+            <tr><th>Type</th><th>Amount</th><th>Paid By</th><th>Date</th><th>Split</th><th>Per Person</th><th>Total</th><th>Actions</th></tr>
+          </thead>
+          <tbody id="expenseBody"></tbody>
+        </table>
+      </section>
+      <section class="section" id="balance-section">
+        <h2>📊 Balance Summary</h2>
+        <table aria-label="Balance Summary">
+          <thead><tr><th>Roommate</th><th>Paid</th><th>Owed</th><th>Balance</th></tr></thead>
+          <tbody id="balanceBody"></tbody>
+        </table>
+      </section>
+      <div class="summary" id="summary-cards">
+        <div class="card"><h3>Total Expenses</h3><p id="totalExp">$0.00</p></div>
+        <div class="card"><h3>Cost Per Person</h3><p id="costPer">$0.00</p></div>
+        <div class="card"><h3>Roommates</h3><p id="count">0</p></div>
+      </div>
+    </main>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const roommates = JSON.parse(localStorage.getItem('roommates')) || ['Jasper','Sophieanna','Corbin'];
+      let monthlyData = JSON.parse(localStorage.getItem('monthlyData')) || {};
+      const today = new Date();
+      let current = { month: today.getMonth(), year: today.getFullYear() };
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      const elems = {
+        roommateInputs: document.getElementById('roommateInputs'),
+        monthSelect: document.getElementById('monthSelect'),
+        yearSelect: document.getElementById('yearSelect'),
+        addExpenseBtn: document.getElementById('addExpenseBtn'),
+        expenseBody: document.getElementById('expenseBody'),
+        balanceBody: document.getElementById('balanceBody'),
+        totalExp: document.getElementById('totalExp'),
+        costPer: document.getElementById('costPer'),
+        count: document.getElementById('count'),
+        viewHistoryBtn: document.getElementById('viewHistoryBtn')
+      };
+      initRoommates(); initSelectors(); loadMonth();
+      elems.addExpenseBtn.addEventListener('click', () => addExpenseRow());
+      elems.monthSelect.addEventListener('change', saveAndLoadMonth);
+      elems.yearSelect.addEventListener('change', saveAndLoadMonth);
+      elems.viewHistoryBtn.addEventListener('click', () => {});
+      function initRoommates() {
+        elems.roommateInputs.innerHTML = '';
+        roommates.forEach((name, idx) => {
+          const group = document.createElement('div');
+          group.classList.add('input-group');
+          group.innerHTML = `<label>Roommate ${idx+1}</label><input data-index="${idx}" value="${name}"/>`;
+          elems.roommateInputs.appendChild(group);
+          group.querySelector('input').addEventListener('input', e => {
+            roommates[e.target.dataset.index] = e.target.value || roommates[e.target.dataset.index];
+            localStorage.setItem('roommates', JSON.stringify(roommates));
+            renderAll();
+          });
+        });
+        elems.count.textContent = roommates.length;
+      }
+      function initSelectors() {
+        elems.monthSelect.innerHTML = monthNames.map((m,i)=>`<option value="${i}"${i===current.month?' selected':''}>${m}</option>`).join('');
+        elems.yearSelect.innerHTML = [current.year-1, current.year, current.year+1].map(y=>`<option value="${y}"${y===current.year?' selected':''}>${y}</option>`).join('');
+      }
+      function saveAndLoadMonth() {
+        saveCurrent();
+        current.month = +elems.monthSelect.value; current.year = +elems.yearSelect.value;
+        loadMonth();
+      }
+      function saveCurrent() {
+        monthlyData[`${monthNames[current.month]}-${current.year}`] = collectExpenses();
+        localStorage.setItem('monthlyData', JSON.stringify(monthlyData));
+      }
+      function collectExpenses() {
+        return [...elems.expenseBody.querySelectorAll('tr')].map(r => ({
+          type: r.cells[0].querySelector('input').value,
+          amount: parseFloat(r.cells[1].querySelector('input').value)||0,
+          paidBy: [...r.querySelectorAll('.paid-checkbox:checked')].map(cb=>+cb.value),
+          date: r.cells[3].querySelector('input').value,
+          splitAmong: [...r.querySelectorAll('.split-checkbox:checked')].map(cb=>+cb.value)
+        }));
+      }
+      function loadMonth() {
+        elems.expenseBody.innerHTML = '';
+        const data = monthlyData[`${monthNames[current.month]}-${current.year}`]||[];
+        data.forEach(addExpenseRow);
+        if(!data.length) addExpenseRow();
+        renderAll();
+      }
+      function addExpenseRow(exp={}) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input value="${exp.type||''}"/></td>
+          <td><input type="number" step="0.01" value="${exp.amount||''}"/></td>
+          <td>${generateCheckboxes('paid', exp.paidBy)}</td>
+          <td><input type="date" value="${exp.date||''}"/></td>
+          <td>${generateCheckboxes('split', exp.splitAmong)}</td>
+          <td class="total"></td><td class="total"></td>
+          <td><button onclick="this.closest('tr').remove()">Remove</button></td>`;
+        elems.expenseBody.appendChild(tr);
+        [...tr.querySelectorAll('input')].forEach(i=>i.addEventListener('input', renderAll));
+        [...tr.querySelectorAll('input[type=checkbox]')].forEach(cb=>cb.addEventListener('change', renderAll));
+      }
+      function generateCheckboxes(type, checked=[]) {
+        return roommates.map((n,i)=>`<label><input type="checkbox" class="${type}-checkbox" value="${i}" ${checked.includes(i)?'checked':''}/> ${n}</label>`).join('');
+      }
+      function renderAll() { const {paidTotals,owedTotals,totalExpenses} = calculate(); elems.totalExp.textContent = `$${totalExpenses.toFixed(2)}`; elems.costPer.textContent = `$${(totalExpenses/roommates.length).toFixed(2)}`; elems.balanceBody.innerHTML = roommates.map((n,i)=>{ const bal=paidTotals[i]-owedTotals[i]; return `<tr><td>${n}</td><td>$${paidTotals[i].toFixed(2)}</td><td>$${owedTotals[i].toFixed(2)}</td><td class="${bal>0?'balance-positive':bal<0?'balance-negative':''}">$${bal.toFixed(2)}</td></tr>`; }).join(''); }
+      function calculate() {
+        const rows = [...elems.expenseBody.querySelectorAll('tr')];
+        const paidTotals = Array(roommates.length).fill(0), owedTotals = Array(roommates.length).fill(0);
+        let totalExpenses = 0;
+        rows.forEach(r=>{
+          const amt = parseFloat(r.cells[1].querySelector('input').value) || 0;
+          if(!amt) return;
+          totalExpenses += amt;
+          const paidBy = [...r.querySelectorAll('.paid-checkbox:checked')].map(cb=>+cb.value);
+          const splitAmong = [...r.querySelectorAll('.split-checkbox:checked')].map(cb=>+cb.value);
+          const per = amt / (splitAmong.length || roommates.length);
+          r.cells[5].textContent = `$${per.toFixed(2)}`;
+          paidBy.forEach(i=> paidTotals[i] += amt / paidBy.length);
+          splitAmong.forEach(i=> owedTotals[i] += per);
+        });
+        return { paidTotals, owedTotals, totalExpenses };
+      }
+    });
+  </script>
+</body>
+</html>
